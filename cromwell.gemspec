@@ -23,6 +23,10 @@ Gem::Specification.new do |s|
      "README.rdoc",
      "Rakefile",
      "VERSION",
+     "cromwell.gemspec",
+     "examples/example1.rb",
+     "examples/example2.rb",
+     "examples/example3.rb",
      "lib/cromwell.rb",
      "test/helper.rb",
      "test/test_cromwell.rb"
