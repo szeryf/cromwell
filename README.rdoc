@@ -1,9 +1,127 @@
-= cromwell
+= Cromwell
 
-Description goes here.
+Lord Protector of your scripts.
+
+== Description
+
+This is a very simple wrapper over <code>Signal#trap</code> method that allows you to easily protect your scripts from being killed while they are doing something that should not be interrupted (e.g. interacting with some non-transactional service) or is too costly to restart (e.g. long computations).
+
+While inside the protected block, your script will ignore certain signals and continue its work, but if a signal was caught, it will terminate once the protected block is over. By default, only following signals are ignored: <code>INT</code> (keyboard interrupt <code>^C</code>), <code>TERM</code> (sent by <code>kill</code> by defautl), <code>HUP</code> (sent when shell terminates), and <code>QUIT</code> (a "dump core" signal, sent with <code>^\\</code>), but you can specify any list of them (except for <code>KILL</code> and <code>STOP</code>, of course).
+
+For a full signal list supported on your operating system, run <code>Signal.list</code> in your <code>irb</code>. For more info on signals and their meaning, check your local <code>man signal</code>.
+
+This gem is based on real-life production code. It is especially useful for protecting various daemon-like scripts in Rails application that are (might be) restarted with every deploy.
+
+== Usage examples
+
+The most important in Cromwell API is the <code>protect</code> method. It can be called in two ways: with a block and without a block.
+
+=== Block form
+
+When used with a block, Cromwell executes the code inside the block protecting it from being interrupted with a signal:
+
+  puts 'See you in a while...'
+  Cromwell.protect {
+    sleep 10
+  }
+  puts "You're still here?"
+
+When you run this script (which lives in <code>examples/example1.rb</code>), you won't be able to interrupt it with <code>^C</code> or simple <code>kill</code> while it's sleeping for ten seconds:
+
+  $ ruby examples/example1.rb
+  See you in a while...
+  ^C^C^C^C
+  [ ten seconds pass... ]
+  $
+
+Because I tried to interrupt the script, it was terminated once the protected block was over. Had I not pressed <code>^C</code>, the last line would be executed:
+
+  $ ruby examples/example1.rb
+  See you in a while...
+  [ ten seconds pass... ]
+  You're still here?
+  $
+
+The script cannot be killed, too (I run it in background to be able to run other commands in the same shell):
+
+  $ ruby examples/example1.rb &
+  [1] 70300
+  See you in a while...
+  $ kill 70300
+  [ ten seconds pass... ]
+  $
+  [1]+  Done                    ruby examples/example1.rb
+
+If you really want to kill it, use <code>kill -9</code>:
+
+  $ ruby examples/example1.rb &
+  [1] 70328
+  See you in a while...
+  $ kill -9 70328
+  $
+  [1]+  Killed                  ruby examples/example1.rb
+
+=== Non-block form
+
+If you want to have more control over what's protected in your script, you can use <code>protect</code> without the block. In that case your code will be protected until you call <code>unprotect</code> method:
+
+  puts 'See you in a while...'
+  Cromwell.protect
+  sleep 10
+  Cromwell.unprotect
+  puts "You're still here?"
+
+The above code lives in <code>examples/example2.rb</code> and behaves in the same way as previous example.
+
+In general it might be good idea to place the call to <code>unprotect</code> in an <code>ensure</code> block. Or, if you want your script to just run until it finishes on its own, don't call <code>unprotect</code> at all.
+
+=== Specifying other signals
+
+If you want to protect from other signals than the default list, specify them as parameters to <code>protect</code> method:
+
+  puts "You can't stop me with ^C but you can kill me. My pid is #{$$}."
+  Cromwell.protect("INT") {
+    sleep 10
+  }
+  puts "You're still here?"
+
+This script is still immune to <code>^C</code>:
+
+  $ ruby examples/example3.rb
+  You can't stop me with ^C but you can kill me. My pid is 70243.
+  ^C^C^C^C
+  [ ten seconds pass... ]
+  $
+
+But can be killed:
+
+  $ ruby examples/example3.rb &
+  [1] 70245
+  You can't stop me with ^C but you can kill me. My pid is 70245.
+  $ kill 70245
+  [1]+  Terminated              ruby examples/example3.rb
+  $
+
+=== Inspecting state
+
+You can inspect Cromwell's state with two methods:
+
+* <code>Cromwell.protected?</code> returns <code>true</code> when your code is protected, <code>false</code> otherwise.
+* <code>Cromwell.should_exit?</code> returns <code>true</code> when a signal was caught and termination will ocur after the protected code is over.
+
+== Compatibility
+
+Works for me. Tested on Mac OS X 10.4--10.6 and a little bit on Debian Linux. If it works for you too, I'd be glad to know. Cromwell's reliability depends heavily on your operating system's signals implementation reliability (which may not be very stable on some systems).
+
+== To Do list
+
+* Remove traps when they are not needed anymore. Currently they remain in place and when you call protect again (even with different signals list), the old ones are still effective.
+* Allow to customize behavior after catching a signal. Right now, the script is terminated after the protected block is done (even if the signal would not normally cause script termination).
+* Play well with other trap handlers that might be installed.
+* Add logger support.
 
 == Note on Patches/Pull Requests
- 
+
 * Fork the project.
 * Make your feature addition or bug fix.
 * Add tests for it. This is important so I don't break it in a
@@ -11,6 +129,10 @@ Description goes here.
 * Commit, do not mess with rakefile, version, or history.
   (if you want to have your own version, that is fine but bump version in a commit by itself I can ignore when I pull)
 * Send me a pull request. Bonus points for topic branches.
+
+== Note on terminology
+
+The protection from signals provided by Cromwell and the method names <code>protect</code>, <code>unprotect</code>, and <code>protected?</code> have <b>nothing</b> to do with Ruby's <code>protected</code> keyword and the general concept of a <i>protected</i> method in Ruby and other object-oriented languages.
 
 == Copyright
 
