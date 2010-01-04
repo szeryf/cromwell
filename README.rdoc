@@ -12,6 +12,16 @@ For a full signal list supported on your operating system, run <code>Signal.list
 
 This gem is based on real-life production code. It is especially useful for protecting various daemon-like scripts in Rails application that are (might be) restarted with every deploy.
 
+== Installation procedure
+
+Thanks to {Gemcutter}[http://gemcutter.org/gems/cromwell], installation is as simple as:
+
+  sudo gem install cromwell
+
+If you plan on changing anything, you should run tests and tests require two additional gems: shoulda and mocha. Install them with:
+
+  sudo gem install thoughtbot-shoulda mocha
+
 == Usage examples
 
 The most important in Cromwell API is the <code>protect</code> method. It can be called in two ways: with a block and without a block.
