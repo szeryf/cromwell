@@ -26,7 +26,7 @@ When used with a block, Cromwell executes the code inside the block protecting i
   }
   puts "You're still here?"
 
-When you run this script (which lives in <code>examples/example1.rb</code>), you won't be able to interrupt it with <code>^C</code> or simple <code>kill</code> while it's sleeping for ten seconds:
+When you run this script (which lives in {examples/example1.rb}[http://github.com/szeryf/cromwell/blob/master/examples/example1.rb]), you won't be able to interrupt it with <code>^C</code> or simple <code>kill</code> while it's sleeping for ten seconds:
 
   $ ruby examples/example1.rb
   See you in a while...
@@ -71,7 +71,7 @@ If you want to have more control over what's protected in your script, you can u
   Cromwell.unprotect
   puts "You're still here?"
 
-The above code lives in <code>examples/example2.rb</code> and behaves in the same way as previous example.
+The above code lives in {examples/example2.rb}[http://github.com/szeryf/cromwell/blob/master/examples/example2.rb] and behaves in the same way as previous example.
 
 In general it might be good idea to place the call to <code>unprotect</code> in an <code>ensure</code> block. Or, if you want your script to just run until it finishes on its own, don't call <code>unprotect</code> at all.
 
