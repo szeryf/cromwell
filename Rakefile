@@ -11,6 +11,7 @@ begin
     gem.homepage = "http://github.com/szeryf/cromwell"
     gem.authors = ["Przemyslaw Kowalczyk"]
     gem.add_development_dependency "thoughtbot-shoulda", ">= 0"
+    gem.add_development_dependency "mocha", ">= 0"
     # gem is a Gem::Specification... see http://www.rubygems.org/read/chapter/20 for additional settings
   end
   Jeweler::GemcutterTasks.new
@@ -55,40 +56,41 @@ end
 
 begin
   require 'metric_fu'
+
+  MetricFu::Configuration.run do |config|
+    #define which metrics you want to use
+    config.metrics  = [:churn, :saikuro, :flog, :flay, :reek, :roodi, :rcov]
+    config.graphs   = []
+    config.flay     = { :dirs_to_flay  => ['lib']  }
+    config.flog     = { :dirs_to_flog  => ['lib']  }
+    config.reek     = { :dirs_to_reek  => ['lib']  }
+    config.roodi    = { :dirs_to_roodi => ['lib'] }
+    config.saikuro  = { :output_directory => 'scratch_directory/saikuro',
+                        :input_directory => ['lib'],
+                        :cyclo => "",
+                        :filter_cyclo => "0",
+                        :warn_cyclo => "5",
+                        :error_cyclo => "7",
+                        :formater => "text"} #this needs to be set to "text"
+    config.churn    = { :start_date => "1 year ago", :minimum_churn_count => 10}
+    config.rcov     = { :test_files => ['test/**/test_*.rb'],
+                        :rcov_opts => ["--sort coverage",
+                                       "--no-html",
+                                       "--text-coverage",
+                                       "--no-color",
+                                       "--exclude /gems/,/Library/,spec"]}
+  end
+
+  # fix for failing on NaN
+  module MetricFu
+    class Generator
+      def round_to_tenths(decimal)
+        decimal=0.0 if decimal.to_s.eql?('NaN')
+        (decimal.to_i * 10).round / 10.0
+      end
+    end
+  end
 rescue LoadError
   puts "metric_fu (or a dependency) not available. If you want to run metrics, install it with: gem install metric_fu"
 end
 
-MetricFu::Configuration.run do |config|
-  #define which metrics you want to use
-  config.metrics  = [:churn, :saikuro, :flog, :flay, :reek, :roodi, :rcov]
-  config.graphs   = []
-  config.flay     = { :dirs_to_flay  => ['lib']  }
-  config.flog     = { :dirs_to_flog  => ['lib']  }
-  config.reek     = { :dirs_to_reek  => ['lib']  }
-  config.roodi    = { :dirs_to_roodi => ['lib'] }
-  config.saikuro  = { :output_directory => 'scratch_directory/saikuro',
-                      :input_directory => ['lib'],
-                      :cyclo => "",
-                      :filter_cyclo => "0",
-                      :warn_cyclo => "5",
-                      :error_cyclo => "7",
-                      :formater => "text"} #this needs to be set to "text"
-  config.churn    = { :start_date => "1 year ago", :minimum_churn_count => 10}
-  config.rcov     = { :test_files => ['test/**/test_*.rb'],
-                      :rcov_opts => ["--sort coverage",
-                                     "--no-html",
-                                     "--text-coverage",
-                                     "--no-color",
-                                     "--exclude /gems/,/Library/,spec"]}
-end
-
-# fix for failing on NaN
-module MetricFu
-  class Generator
-    def round_to_tenths(decimal)
-      decimal=0.0 if decimal.to_s.eql?('NaN')
-      (decimal.to_i * 10).round / 10.0
-    end
-  end
-end
