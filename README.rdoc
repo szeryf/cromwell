@@ -121,7 +121,11 @@ You can inspect Cromwell's state with two methods:
 
 === Preventing termination
 
-Since version 0.1.2, you can prevent termination of your script even when a signal was caught. To do so, use <code>Cromwell.should_exit = false</code> like that:
+Since version 0.1.2, you can prevent termination of your script even when a signal was caught. To do so, use
+
+  Cromwell.should_exit = false
+
+like that:
 
   puts 'You can try to kill me but I will survive!'
   Cromwell.protect {
