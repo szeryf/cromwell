@@ -119,6 +119,31 @@ You can inspect Cromwell's state with two methods:
 * <code>Cromwell.protected?</code> returns <code>true</code> when your code is protected, <code>false</code> otherwise.
 * <code>Cromwell.should_exit?</code> returns <code>true</code> when a signal was caught and termination will ocur after the protected code is over.
 
+=== Preventing termination
+
+Since version 0.1.2, you can prevent termination of your script even when a signal was caught. To do so, use <code>Cromwell.should_exit = false</code> like that:
+
+  puts 'You can try to kill me but I will survive!'
+  Cromwell.protect {
+    begin
+      sleep 10
+    ensure
+      puts "Oh noes! You wanted to kill me! But I'll continue my work!" if Cromwell.should_exit?
+      Cromwell.should_exit = false
+    end
+  }
+  puts "You're still here?"
+
+This script will continue working even after <code>^C</code>:
+
+  $ ruby examples/example4.rb
+  You can try to kill me but I will survive!
+  ^C^C^C
+  [ ten seconds pass... ]
+  Oh noes! You wanted to kill me! But I'll continue my work!
+  You're still here?
+  $
+
 == Compatibility
 
 Works for me. Tested on Mac OS X 10.4--10.6 and a little bit on Debian Linux. If it works for you too, I'd be glad to know. Cromwell's reliability depends heavily on your operating system's signals implementation reliability (which may not be very stable on some systems).

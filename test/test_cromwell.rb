@@ -132,10 +132,18 @@ class TestCromwell < Test::Unit::TestCase
     end
 
     should "terminate if should_exit is true" do
-      Cromwell.send(:class_variable_set, "@@should_exit", true)
+      Cromwell.should_exit = true
       Cromwell.expects(:exit)
       Cromwell.unprotect
     end
   end # method unprotect
 
+  context "should_exit=" do
+    should "prevent script from terminating if set to false" do
+      Cromwell.should_exit = false
+      Cromwell.expects(:exit).never
+      Cromwell.unprotect
+    end
+  end
+  
 end

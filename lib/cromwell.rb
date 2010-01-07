@@ -47,6 +47,15 @@ class Cromwell
     end
 
     # call-seq:
+    #   Cromwell.should_exit = bool
+    #
+    # Set to false to prevent script from termination even if a signal was caught. You can also set
+    # this to true to have your script terminated after protected block should you wish so.
+    def should_exit= b
+      @@should_exit = b
+    end
+
+    # call-seq:
     #   Cromwell.protected?
     #
     # True if the protection is currently active.
