@@ -148,16 +148,52 @@ This script will continue working even after <code>^C</code>:
   You're still here?
   $
 
+=== Removing traps
+
+As of version 0.2, any traps that were previously installed are restored by the unprotect method (which is also called by the protect method if a block was given to it, of course). This means if you had some other code installed to handle signals (profiling, debugging etc.) it should be restored. For example:
+
+  Signal.trap("INT") { puts "Original signal handler!" }
+
+  puts 'See you in a while...'
+  Cromwell.protect {
+    sleep 1
+  }
+  puts "Try to ^C now to see original signal handler in action!"
+  sleep 10
+
+When run, it goes like this:
+
+  $ ruby examples/example5.rb
+  See you in a while...
+  [ 1 second passes... ]
+  Try to ^C now to see original signal handler in action!
+  ^COriginal signal handler!
+  ^COriginal signal handler!
+  ^COriginal signal handler!
+  [ ten seconds pass... ]
+  $
+
+Of course, had I press <code>^C</code> right after "See you in a while...", the script would terminate after 1 second at the end of the protected block.
+
 == Compatibility
 
 Works for me. Tested on Mac OS X 10.4--10.6 and a little bit on Debian Linux. If it works for you too, I'd be glad to know. Cromwell's reliability depends heavily on your operating system's signals implementation reliability (which may not be very stable on some systems).
 
 == To Do list
 
-* Remove traps when they are not needed anymore. Currently they remain in place and when you call protect again (even with different signals list), the old ones are still effective.
 * Allow to customize behavior after catching a signal. Right now, the script is terminated after the protected block is done (even if the signal would not normally cause script termination).
-* Play well with other trap handlers that might be installed.
 * Add logger support.
+
+== Changelog
+
+=== 0.2
+
+* Remove traps when they are not needed anymore and restore original traps.
+
+=== 0.1.2
+
+* Allow to prevent termination of your script even when a signal was caught.
+* Ensure that examples use ../lib/cromwell.rb not the installed gem
 
 == Note on Patches/Pull Requests
 

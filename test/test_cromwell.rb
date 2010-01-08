@@ -80,6 +80,20 @@ class TestCromwell < Test::Unit::TestCase
     end
   end # general functionality
 
+  context "original traps" do
+    should "be restored" do
+      im_in_ur_blok_touchin_ur_vars = false
+      Signal.trap("HUP") {
+        im_in_ur_blok_touchin_ur_vars = true
+      }
+      Cromwell.protect {
+        im_in_ur_blok_touchin_ur_vars = :maybe?
+      }
+      Process.kill("HUP", $$)
+      assert im_in_ur_blok_touchin_ur_vars
+    end
+  end
+
   context "method protect" do
     should "set up trap with given signals" do
       Cromwell.expects(:set_up_traps).with(["HUP", "TERM"])
@@ -145,5 +159,5 @@ class TestCromwell < Test::Unit::TestCase
       Cromwell.unprotect
     end
   end
-  
+
 end

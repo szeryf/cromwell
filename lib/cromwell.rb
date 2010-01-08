@@ -35,6 +35,7 @@ class Cromwell
     def unprotect
       @@protected = false
       exit if @@should_exit
+      restore_old_traps
     end
 
     # call-seq:
@@ -47,7 +48,7 @@ class Cromwell
     end
 
     # call-seq:
-    #   Cromwell.should_exit = bool
+    #   Cromwell.should_exit = boolean
     #
     # Set to false to prevent script from termination even if a signal was caught. You can also set
     # this to true to have your script terminated after protected block should you wish so.
@@ -69,15 +70,27 @@ class Cromwell
     end
 
     def set_up_trap signal
-      trap signal do
+      old_trap = trap signal do
         if @@protected
-          #puts "Just a minute now."
           @@should_exit = true
           "IGNORE"
         else
           exit
         end
       end
+      stash old_trap, signal
+    end
+
+    def stash old_trap, signal
+      @@old_traps ||= {}
+      @@old_traps[signal] = old_trap
+    end
+
+    def restore_old_traps
+      @@old_traps.each do |signal, old_trap|
+        trap signal, old_trap
+      end
+      @@old_traps = {}
     end
   end
 end
