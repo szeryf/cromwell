@@ -175,6 +175,37 @@ When run, it goes like this:
 
 Of course, had I press <code>^C</code> right after "See you in a while...", the script would terminate after 1 second at the end of the protected block.
 
+=== Logging
+
+If want to see what is going on with Cromwell or have some problems with it, you can use a logger (requires cromwell gem version >= 0.3). If Cromwell is used inside an application that already uses logging, you can use your app's logger. Or you might prefer to use a separate logger.
+
+Cromwell uses two levels of log messages:
+
+* <code>Logger::INFO</code> -- when a signal was caught or script is terminated.
+* <code>Logger::DEBUG</code> -- all sorts of debugging information: setting up and restoring traps, calling methods and yielding block. Probably not useful for you, unless you have some problems with Cromwell or are messing with the code.
+
+Here's an example of logger usage:
+
+  Cromwell.logger = Logger.new(STDOUT)
+  Cromwell.logger.level = Logger::INFO
+
+  puts 'See you in a while...'
+  Cromwell.protect {
+    sleep 10
+  }
+  puts "You're still here?"
+
+When run, this script will log messages on <code>STDOUT</code>:
+
+  $ ruby examples/example6.rb
+  See you in a while...
+  ^CI, [2010-01-14T11:59:29.246851 #19011]  INFO -- : Caught signal INT -- ignoring.
+  ^CI, [2010-01-14T11:59:31.558532 #19011]  INFO -- : Caught signal INT -- ignoring.
+  ^CI, [2010-01-14T11:59:36.270395 #19011]  INFO -- : Caught signal INT -- ignoring.
+  [ ten seconds pass... ]
+  I, [2010-01-14T11:59:37.872514 #19011]  INFO -- : Exiting because should_exit is true
+  $
+
 == Compatibility
 
 Works for me. Tested on Mac OS X 10.4--10.6 and a little bit on Debian Linux. If it works for you too, I'd be glad to know. Cromwell's reliability depends heavily on your operating system's signals implementation reliability (which may not be very stable on some systems).
@@ -182,9 +213,12 @@ Works for me. Tested on Mac OS X 10.4--10.6 and a little bit on Debian Linux. If
 == To Do list
 
 * Allow to customize behavior after catching a signal. Right now, the script is terminated after the protected block is done (even if the signal would not normally cause script termination).
-* Add logger support.
 
 == Changelog
+
+=== 0.3
+
+* Added logger support.
 
 === 0.2
 

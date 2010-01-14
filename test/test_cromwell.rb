@@ -115,9 +115,52 @@ class TestCromwell < Test::Unit::TestCase
       assert Cromwell.protected?
     end
 
+    context "with a logger" do
+      setup do
+        @log = stub :debug => true
+        Cromwell.logger = @log
+      end
+
+      teardown do
+        Cromwell.logger = nil
+      end
+
+      should "log about being called" do
+        @log.expects(:debug).with("Protect called with []")
+        Cromwell.protect { i = 1 }
+      end
+
+      should "log about being called with parameters" do
+        @log.expects(:debug).with("Protect called with [HUP, TERM]")
+        Cromwell.protect("HUP", "TERM") { i = 1 }
+      end
+
+      should "log about setting traps" do
+        @log.expects(:debug).with("Setting trap for HUP")
+        @log.expects(:debug).with("Setting trap for TERM")
+        Cromwell.protect("HUP", "TERM") { i = 1 }
+      end
+
+      should "log about stashing old traps" do
+        Signal.trap "HUP", proc {}
+        Signal.trap "TERM", "DEFAULT"
+        @log.expects(:debug).with(regexp_matches(/^Stashing old trap #<Proc:.+> for HUP$/))
+        @log.expects(:debug).with('Stashing old trap DEFAULT for TERM')
+        Cromwell.protect("HUP", "TERM") { i = 1 }
+      end
+
+      should "log about restoring old traps" do
+        Signal.trap "HUP", proc {}
+        Signal.trap "TERM", "DEFAULT"
+        @log.expects(:debug).with(regexp_matches(/^Restoring old trap #<Proc:.+> for HUP$/))
+        @log.expects(:debug).with('Restoring old trap DEFAULT for TERM')
+        Cromwell.protect("HUP", "TERM") { i = 1 }
+      end
+    end # with a logger
+
   end # method protect
 
-  context "method protect with block" do
+  context "method protect with a block" do
     should "yield to block" do
       im_in_ur_blok_touchin_ur_vars = false
       Cromwell.protect {
@@ -136,6 +179,28 @@ class TestCromwell < Test::Unit::TestCase
         assert Cromwell.protected?
       }
     end
+
+    context "with a logger" do
+      setup do
+        @log = stub :debug => true
+        Cromwell.logger = @log
+      end
+
+      teardown do
+        Cromwell.logger = nil
+      end
+
+      should "log before yield" do
+        @log.expects(:debug).with('About to yield to block.')
+        Cromwell.protect { i = 1 }
+      end
+
+      should "log after yield" do
+        @log.expects(:debug).with('After yielding to block.')
+        Cromwell.protect { i = 1 }
+      end
+    end # with a logger
+
   end # method protect with block
 
   context "method unprotect" do
@@ -150,6 +215,28 @@ class TestCromwell < Test::Unit::TestCase
       Cromwell.expects(:exit)
       Cromwell.unprotect
     end
+
+    context "with a logger" do
+      setup do
+        @log = stub :debug => true
+        Cromwell.logger = @log
+        Cromwell.should_exit = false
+      end
+
+      teardown do
+        Cromwell.logger = nil
+      end
+
+      should "log about being called" do
+        @log.expects(:debug).with("Unprotect called")
+        Cromwell.unprotect
+      end
+
+      should "log about should_exit value" do
+        @log.expects(:debug).with("should_exit? = false")
+        Cromwell.unprotect
+      end
+    end # with a logger
   end # method unprotect
 
   context "should_exit=" do

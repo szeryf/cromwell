@@ -1,6 +1,11 @@
 class Cromwell
   DEFAULT_SIGNAL_LIST = %w[INT TERM HUP QUIT].freeze
 
+  @@logger      = nil
+  @@should_exit = false
+  @@protected   = false
+  @@old_traps   = {}
+
   class << self
     # call-seq:
     #   Cromwell.protect(*signals) { ... some code ... }
@@ -14,12 +19,15 @@ class Cromwell
     # Without parameters, the code is protected from the signals in DEFAULT_SIGNAL_LIST.
     # More info and examples in README.rdoc.
     def protect *signals
+      debug "Protect called with [#{signals * ', '}]"
       set_up_traps(signals.empty? ? DEFAULT_SIGNAL_LIST : signals.flatten)
       @@should_exit = false
       @@protected   = true
       if block_given?
         begin
+          debug "About to yield to block."
           yield
+          debug "After yielding to block."
         ensure
           unprotect
         end
@@ -33,8 +41,13 @@ class Cromwell
     # if signal was caught earlier (so any <code>at_exit</code> code will be executed).
     # The protect method calls this automatically when executed with a block.
     def unprotect
+      debug "Unprotect called"
       @@protected = false
-      exit if @@should_exit
+      debug "should_exit? = #{@@should_exit}"
+      if @@should_exit
+        info "Exiting because should_exit is true"
+        exit
+      end
       restore_old_traps
     end
 
@@ -64,33 +77,63 @@ class Cromwell
       @@protected
     end
 
+    # call-seq:
+    #   Cromwell.logger
+    #
+    # Returns logger. There is no default logger, so if you haven't set this before, it will be nil.
+    def logger
+      @@logger
+    end
+
+    # call-seq:
+    #   Cromwell.logger = some_logger
+    #
+    # Set a logger for Cromwell.
+    def logger= logger
+      @@logger = logger
+    end
+
   private
     def set_up_traps signals
-      signals.each { |signal| set_up_trap signal }
+      signals.each do |signal|
+        old_trap = set_up_trap signal
+        stash old_trap, signal
+      end
     end
 
     def set_up_trap signal
-      old_trap = trap signal do
+      debug "Setting trap for #{signal}"
+      trap signal do
         if @@protected
+          info "Caught signal #{signal} -- ignoring."
           @@should_exit = true
           "IGNORE"
         else
+          info "Caught signal #{signal} -- exiting."
           exit
         end
       end
-      stash old_trap, signal
     end
 
     def stash old_trap, signal
-      @@old_traps ||= {}
+      debug "Stashing old trap #{old_trap} for #{signal}"
       @@old_traps[signal] = old_trap
     end
 
     def restore_old_traps
       @@old_traps.each do |signal, old_trap|
+        debug "Restoring old trap #{old_trap} for #{signal}"
         trap signal, old_trap
       end
       @@old_traps = {}
+    end
+
+    def debug msg
+      @@logger.debug msg if @@logger
+    end
+
+    def info msg
+      @@logger.info msg if @@logger
     end
   end
 end
