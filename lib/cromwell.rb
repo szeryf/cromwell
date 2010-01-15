@@ -52,8 +52,9 @@ class Cromwell
       if @should_exit
         info "Exiting because should_exit is true"
         exit
+      else
+        restore_old_traps
       end
-      restore_old_traps
     end
 
   private
@@ -75,7 +76,6 @@ class Cromwell
         @should_exit = true
         "IGNORE"
       else
-        info "Caught signal #{signal} -- exiting."
         exit
       end
     end
