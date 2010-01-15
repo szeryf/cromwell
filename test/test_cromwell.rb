@@ -227,13 +227,8 @@ class TestCromwell < Test::Unit::TestCase
         Cromwell.logger = nil
       end
 
-      should "log about being called" do
-        @log.expects(:debug).with("Unprotect called")
-        Cromwell.unprotect
-      end
-
       should "log about should_exit value" do
-        @log.expects(:debug).with("should_exit? = false")
+        @log.expects(:debug).with("Unprotect called, should_exit? = false")
         Cromwell.unprotect
       end
     end # with a logger
