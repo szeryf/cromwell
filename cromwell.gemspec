@@ -5,11 +5,11 @@
 
 Gem::Specification.new do |s|
   s.name = %q{cromwell}
-  s.version = "0.3.0"
+  s.version = "0.4.0"
 
   s.required_rubygems_version = Gem::Requirement.new(">= 0") if s.respond_to? :required_rubygems_version=
   s.authors = ["Przemyslaw Kowalczyk"]
-  s.date = %q{2010-01-14}
+  s.date = %q{2010-01-31}
   s.description = %q{A very simple wrapper over Signal#trap method that allows you to easily protect your scripts from being killed while they are doing something that should not be interrupted (e.g. interacting with some non-transactional service) or is too costly to restart (e.g. long computations). }
   s.email = %q{szeryf@negativeiq.pl}
   s.extra_rdoc_files = [
@@ -30,6 +30,7 @@ Gem::Specification.new do |s|
      "examples/example4.rb",
      "examples/example5.rb",
      "examples/example6.rb",
+     "examples/example7.rb",
      "lib/cromwell.rb",
      "test/helper.rb",
      "test/test_cromwell.rb"
@@ -47,7 +48,8 @@ Gem::Specification.new do |s|
      "examples/example3.rb",
      "examples/example4.rb",
      "examples/example5.rb",
-     "examples/example6.rb"
+     "examples/example6.rb",
+     "examples/example7.rb"
   ]
 
   if s.respond_to? :specification_version then
