@@ -86,8 +86,8 @@ class Cromwell
     def set_up_trap signal
       debug "Setting trap for #{signal}"
       trap(signal) {
-        if custom_traps[signal]
-          custom_traps[signal].call
+        if @custom_traps.has_key? signal
+          @custom_traps[signal].call
         else
           handle signal
         end
