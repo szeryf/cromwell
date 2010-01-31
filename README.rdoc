@@ -6,9 +6,9 @@ Lord Protector of your scripts.
 
 This is a very simple wrapper over <code>Signal#trap</code> method that allows you to easily protect your scripts from being killed while they are doing something that should not be interrupted (e.g. interacting with some non-transactional service) or is too costly to restart (e.g. long computations).
 
-While inside the protected block, your script will ignore certain signals and continue its work, but if a signal was caught, it will terminate once the protected block is over. By default, only following signals are ignored: <code>INT</code> (keyboard interrupt <code>^C</code>), <code>TERM</code> (sent by <code>kill</code> by defautl), <code>HUP</code> (sent when shell terminates), and <code>QUIT</code> (a "dump core" signal, sent with <code>^\\</code>), but you can specify any list of them (except for <code>KILL</code> and <code>STOP</code>, of course).
+While inside the protected block, your script will ignore certain signals and continue its work, but if a signal was caught, it will terminate once the protected block is over. By default, only following signals are ignored: +INT+ (keyboard interrupt <code>^C</code>), +TERM+ (sent by +kill+ by defautl), +HUP+ (sent when shell terminates), and +QUIT+ (a "dump core" signal, sent with <code>^\\</code>), but you can specify any list of them (except for +KILL+ and +STOP+, of course).
 
-For a full signal list supported on your operating system, run <code>Signal.list</code> in your <code>irb</code>. For more info on signals and their meaning, check your local <code>man signal</code>.
+For a full signal list supported on your operating system, run <code>Signal.list</code> in your +irb+. For more info on signals and their meaning, check your local <code>man signal</code>.
 
 This gem is based on real-life production code. It is especially useful for protecting various daemon-like scripts in Rails application that are (might be) restarted with every deploy.
 
@@ -24,7 +24,7 @@ If you plan on changing anything, you should run tests and tests require two add
 
 == Usage examples
 
-The most important in Cromwell API is the <code>protect</code> method. It can be called in two ways: with a block and without a block.
+The most important in Cromwell API is the +protect+ method. It can be called in two ways: with a block and without a block.
 
 === Block form
 
@@ -36,7 +36,7 @@ When used with a block, Cromwell executes the code inside the block protecting i
   }
   puts "You're still here?"
 
-When you run this script (which lives in {examples/example1.rb}[http://github.com/szeryf/cromwell/blob/master/examples/example1.rb]), you won't be able to interrupt it with <code>^C</code> or simple <code>kill</code> while it's sleeping for ten seconds:
+When you run this script (which lives in {examples/example1.rb}[http://github.com/szeryf/cromwell/blob/master/examples/example1.rb]), you won't be able to interrupt it with <code>^C</code> or simple +kill+ while it's sleeping for ten seconds:
 
   $ ruby examples/example1.rb
   See you in a while...
@@ -73,7 +73,7 @@ If you really want to kill it, use <code>kill -9</code>:
 
 === Non-block form
 
-If you want to have more control over what's protected in your script, you can use <code>protect</code> without the block. In that case your code will be protected until you call <code>unprotect</code> method:
+If you want to have more control over what's protected in your script, you can use +protect+ without the block. In that case your code will be protected until you call +unprotect+ method:
 
   puts 'See you in a while...'
   Cromwell.protect
@@ -83,11 +83,11 @@ If you want to have more control over what's protected in your script, you can u
 
 The above code lives in {examples/example2.rb}[http://github.com/szeryf/cromwell/blob/master/examples/example2.rb] and behaves in the same way as previous example.
 
-In general it might be good idea to place the call to <code>unprotect</code> in an <code>ensure</code> block. Or, if you want your script to just run until it finishes on its own, don't call <code>unprotect</code> at all.
+In general it might be good idea to place the call to +unprotect+ in an +ensure+ block. Or, if you want your script to just run until it finishes on its own, don't call +unprotect+ at all.
 
 === Specifying other signals
 
-If you want to protect from other signals than the default list, specify them as parameters to <code>protect</code> method:
+If you want to protect from other signals than the default list, specify them as parameters to +protect+ method:
 
   puts "You can't stop me with ^C but you can kill me. My pid is #{$$}."
   Cromwell.protect("INT") {
@@ -116,8 +116,8 @@ But can be killed:
 
 You can inspect Cromwell's state with two methods:
 
-* <code>Cromwell.protected?</code> returns <code>true</code> when your code is protected, <code>false</code> otherwise.
-* <code>Cromwell.should_exit?</code> returns <code>true</code> when a signal was caught and termination will ocur after the protected code is over.
+* <code>Cromwell.protected?</code> returns +true+ when your code is protected, +false+ otherwise.
+* <code>Cromwell.should_exit?</code> returns +true+ when a signal was caught and termination will ocur after the protected code is over.
 
 === Preventing termination
 
@@ -195,7 +195,7 @@ Here's an example of logger usage:
   }
   puts "You're still here?"
 
-When run, this script will log messages on <code>STDOUT</code>:
+When run, this script will log messages on +STDOUT+:
 
   $ ruby examples/example6.rb
   See you in a while...
@@ -206,15 +206,63 @@ When run, this script will log messages on <code>STDOUT</code>:
   I, [2010-01-14T11:59:37.872514 #19011]  INFO -- : Exiting because should_exit is true
   $
 
+=== Custom traps
+
+Starting with version 0.4, you can provide your own trap to handle signal. Possible uses of this feature that I can imagine:
+
+* ask user for password so only admin can kill the script,
+* setup some counter and exit the script after 3 signals,
+* handle some signals differently.
+
+In the following example ({examples/example7.rb}[http://github.com/szeryf/cromwell/blob/master/examples/example7.rb]), +SIGINT+ is ignored completely, while +SIGQUIT+ is handled normally (exit after protected block), but with a message:
+
+  Cromwell.custom_traps["INT"] = proc {
+    puts "Trying your ^C skills, are you?"
+  }
+
+  Cromwell.custom_traps["QUIT"] = proc {
+    puts "We'll be leaving soon!"
+    Cromwell.should_exit = true
+  }
+
+  puts 'See you in a while...'
+  Cromwell.protect {
+    sleep 10
+  }
+  puts "You're still here?"
+
+Let's see it in action:
+
+  $ ruby examples/example7.rb
+  See you in a while...
+  ^CTrying your ^C skills, are you?
+  [ ten seconds pass... ]
+  You're still here?
+  $
+
+The last message printed means that the script was not terminated after protected block because the signal trap did not set +should_exit+ to +true+. And now, let's try sending +SIGQUIT+:
+
+  $ ruby examples/example7.rb
+  See you in a while...
+  ^\We'll be leaving soon!
+  [ ten seconds pass... ]
+  $
+
+This time the script didn't get to execute the last +puts+ statement.
+
 == Compatibility
 
 Works for me. Tested on Mac OS X 10.4--10.6 and a little bit on Debian Linux. If it works for you too, I'd be glad to know. Cromwell's reliability depends heavily on your operating system's signals implementation reliability (which may not be very stable on some systems).
 
 == To Do list
 
-* Allow to customize behavior after catching a signal. Right now, the script is terminated after the protected block is done (even if the signal would not normally cause script termination).
+* Empty for now... If you miss some feature, let me know.
 
 == Changelog
+
+=== 0.4
+
+* Added custom traps.
 
 === 0.3
 
@@ -241,7 +289,7 @@ Works for me. Tested on Mac OS X 10.4--10.6 and a little bit on Debian Linux. If
 
 == Note on terminology
 
-The protection from signals provided by Cromwell and the method names <code>protect</code>, <code>unprotect</code>, and <code>protected?</code> have <b>nothing</b> to do with Ruby's <code>protected</code> keyword and the general concept of a <i>protected</i> method in Ruby and other object-oriented languages.
+The protection from signals provided by Cromwell and the method names +protect+, +unprotect+, and <code>protected?</code> have <b>nothing</b> to do with Ruby's +protected+ keyword and the general concept of a <i>protected</i> method in Ruby and other object-oriented languages.
 
 == Copyright
 

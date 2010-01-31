@@ -94,6 +94,24 @@ class TestCromwell < Test::Unit::TestCase
     end
   end
 
+  context "custom traps" do
+    should "be used if provided" do
+      im_in_ur_blok_touchin_ur_vars = false
+      Cromwell.custom_traps["HUP"] = proc {
+        im_in_ur_blok_touchin_ur_vars = true
+      }
+      Cromwell.protect {
+        Process.kill("HUP", $$)
+      }
+      assert im_in_ur_blok_touchin_ur_vars
+    end
+
+    teardown do
+      Cromwell.custom_traps = {}
+    end
+  end
+
+
   context "method protect" do
     should "set up trap with given signals" do
       Cromwell.expects(:set_up_traps).with(["HUP", "TERM"])
@@ -241,5 +259,6 @@ class TestCromwell < Test::Unit::TestCase
       Cromwell.unprotect
     end
   end
+
 
 end

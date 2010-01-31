@@ -1,14 +1,15 @@
 class Cromwell
   DEFAULT_SIGNAL_LIST = %w[INT TERM HUP QUIT].freeze
 
-  @logger      = nil
-  @should_exit = false
-  @protected   = false
-  @old_traps   = {}
+  @logger       = nil
+  @should_exit  = false
+  @protected    = false
+  @old_traps    = {}
+  @custom_traps = {}
 
   class << self
-    # Something to log Cromwell's messages if you like. This can be a +Logger+ or any other class that
-    # accepts #debug and #info messages. Default value is +nil+.
+    # Something to log Cromwell's messages. This can be a +Logger+ or any other class that
+    # accepts +debug+ and +info+ messages. Default value is +nil+.
     attr_accessor :logger
 
     # True when the script will be terminated after protected block, i.e. when a signal
@@ -20,6 +21,23 @@ class Cromwell
     # True if the protection is currently active.
     attr_reader  :protected
     alias_method :protected?, :protected
+
+    # Use this +Hash+ to provide custom traps for signals while protection is active.
+    # The key should be a signal name (in same form as you give it to +protect+ method)
+    # and the value should be a +Proc+ object that will be called when appropriate
+    # signal is caught.
+    #
+    # Note that your block will replace default Cromwell's handler completely,
+    # so if you actually wanted to get the same behavior, you should use:
+    #
+    #  Cromwell.should_exit = true
+    #
+    # Example:
+    #
+    #   Cromwell.custom_traps["INT"] = proc {
+    #     puts "Trying your ^C skills, are you?"
+    #   }
+    attr_accessor :custom_traps
 
     # call-seq:
     #   Cromwell.protect(*signals) { ... some code ... }
@@ -67,17 +85,19 @@ class Cromwell
 
     def set_up_trap signal
       debug "Setting trap for #{signal}"
-      trap(signal) { handle signal }
+      trap(signal) {
+        if custom_traps[signal]
+          custom_traps[signal].call
+        else
+          handle signal
+        end
+      }
     end
 
     def handle signal
-      if @protected
-        info "Caught signal #{signal} -- ignoring."
-        @should_exit = true
-        "IGNORE"
-      else
-        exit
-      end
+      info "Caught signal #{signal} -- ignoring."
+      @should_exit = true
+      "IGNORE"
     end
 
     def stash old_trap, signal
