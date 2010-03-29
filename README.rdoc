@@ -6,7 +6,7 @@ Lord Protector of your scripts.
 
 This is a very simple wrapper over <code>Signal#trap</code> method that allows you to easily protect your scripts from being killed while they are doing something that should not be interrupted (e.g. interacting with some non-transactional service) or is too costly to restart (e.g. long computations).
 
-While inside the protected block, your script will ignore certain signals and continue its work, but if a signal was caught, it will terminate once the protected block is over. By default, only following signals are ignored: +INT+ (keyboard interrupt <code>^C</code>), +TERM+ (sent by +kill+ by defautl), +HUP+ (sent when shell terminates), and +QUIT+ (a "dump core" signal, sent with <code>^\\</code>), but you can specify any list of them (except for +KILL+ and +STOP+, of course).
+While inside the protected block, your script will ignore certain signals and continue its work, but if a signal was caught, it will terminate once the protected block is over. By default, only following signals are ignored: +INT+ (keyboard interrupt <code>^C</code>), +TERM+ (sent by +kill+ by default), +HUP+ (sent when shell terminates), and +QUIT+ (a "dump core" signal, sent with <code>^\\</code>), but you can specify any list of them (except for +KILL+ and +STOP+, of course).
 
 For a full signal list supported on your operating system, run <code>Signal.list</code> in your +irb+. For more info on signals and their meaning, check your local <code>man signal</code>.
 
@@ -117,7 +117,7 @@ But can be killed:
 You can inspect Cromwell's state with two methods:
 
 * <code>Cromwell.protected?</code> returns +true+ when your code is protected, +false+ otherwise.
-* <code>Cromwell.should_exit?</code> returns +true+ when a signal was caught and termination will ocur after the protected code is over.
+* <code>Cromwell.should_exit?</code> returns +true+ when a signal was caught and termination will occur after the protected code is over.
 
 === Preventing termination
 
